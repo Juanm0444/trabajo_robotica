@@ -1,40 +1,54 @@
 
 #include "MeOrion.h"
 #include <Wire.h>
+#include <PinChangeInt.h>
+#include <PID_v1.h>
+//Tendrás que instalar la librería (Arduino PID Library by Brett Beauregard)
+#define kp 5
+#define ki 1
+#define kd 0.01
+
 String nada;
 String angulo;
 String comando;
+int contador; //Sustituye al delay, que bloqueaba el código.
+float posactual; //Posición en la que se encuentra el motor (encoder).
+int posnext;
+MeEncoderNew motor(0x09, SLOT1); //Hemos empleado la librería de makeblock
+double input = 0, output = 0, setpoint = 0;
+PID myPID(&posactual, &salida, &posnext, kp, ki, kd, DIRECT);
 
-MeEncoderNew motor(0x09, SLOT1); 
 
 void setup()
 {
   motor.begin();
   Serial.begin(9600);
+  myPID.SetMode(AUTOMATIC);
+  myPID.SetSampleTime(1); /*Establece la diferencia de tiempos para los que se obtiene la nueva salida*/
+  myPID.SetOutputLimits(-185, 185); /*Límites de la salida (Las señales PWD están limitadas entre este intervalo)*/
+  contador = 0;                     /*En nuestro caso, las revoluciones máximas permitidas por el motor con reductora son 185rpm */
 }
 
 
 void loop()
 {
-delay(50);
- if(Serial.available()){//solo leeremos si hay un byte en el buffer
-    
-    
-    //comando=Serial.read();//leemos el byte
-    nada  = Serial.readStringUntil('#');
-    comando  = Serial.readStringUntil('#');
-    angulo  = Serial.readStringUntil('#');
+ if(contador == 50){
+   if(Serial.available()){//solo leeremos si hay un byte en el buffer
+     //comando=Serial.read();//leemos el byte
+     nada  = Serial.readStringUntil('#');
+     comando  = Serial.readStringUntil('#');
+     angulo  = Serial.readStringUntil('#');
+     }contador = 0;
+   }
    
    if(comando=="1"){//Cambiar posición
-    float posactual= motor.getCurrentPosition();//Posición en la que se encuentra el motor
-    int posnext=(angulo.ToInt());
-    float angmov= posnext-posactual;//Giro que va a hacer el motor para llegar a la posición deseada
-                                    //Puede ser + o - (El signo indica el sentido del giro)
-    motor.moveto(angmov,200); //200 es la velocidad que le hemos puesto, será modificado luego
-    delay(100);
+    float posactual = motor.getCurrentPosition();//Posición en la que se encuentra el motor
+    posnext = (angulo.ToInt());
+    myPID.Compute();  // calcula la salida (la señal PWM, o la velocidad en nuestro caso)
+    motor.RunSpeed(salida);   // En nuestro caso, no podemos usar AnalogWrite seguido del valor de la señal PWM,
+                              // ya que el motor del que disponemos tenía una salida preparada con funciones. 
+                              // Por ello ajustamos directamente la velocidad.
     }
-    }
-    //Falta control P
 }
 
 

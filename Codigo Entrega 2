@@ -5,7 +5,7 @@ String nada;
 String angulo;
 String comando;
 
-MeEncoderNew motor(0x09, SLOT1); 
+MeEncoderNew motor(0x09, SLOT1); //(registro, slave)
 
 void setup()
 {
@@ -20,7 +20,7 @@ delay(50);
  if(Serial.available()){//solo leeremos si hay un byte en el buffer
     
     
-    //comando=Serial.read();//leemos el byte
+    //comando=Serial.read();//leemos el byte//codificación mensaje #dato1#dato2#
     nada  = Serial.readStringUntil('#');
     comando  = Serial.readStringUntil('#');
     angulo  = Serial.readStringUntil('#');
@@ -31,7 +31,7 @@ delay(50);
     float angmov= posnext-posactual;//Giro que va a hacer el motor para llegar a la posición deseada
                                     //Puede ser + o - (El signo indica el sentido del giro)
     motor.moveto(angmov,200); //200 es la velocidad que le hemos puesto, será modificado luego
-    delay(100);
+    delay(100);//si tenemos el dalay de 50ms al principio del loop, no haría falta este no?
     }
     }
     //Falta control P

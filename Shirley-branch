@@ -37,9 +37,10 @@ void loop(){
   String nada;
   String comando;
   String angulo;
+  int i=0;
 //  posactual=50;
 //  posnext=30;
-  Serial.print("Salida:");Serial.println(salida);
+  Serial.print("Salida1:");Serial.println(salida);
   
   if(Serial.available()){//solo leeremos si hay un byte en el buffer
     
@@ -55,21 +56,27 @@ void loop(){
       posnext=(angulo.toDouble());//Posición a donde se quiere mover el motor enviado por matlab
       Serial.print("Posnext:");Serial.println(posnext);
       
-      while ((posactual<1000)){
-        double posactual = motor1.getCurrentPosition();//Posición actual del motor
+      while (i<10){
+        
+        posnext=(angulo.toDouble());//Posición a donde se quiere mover el motor enviado por matlab
+        Serial.print("Posnext:");Serial.println(posnext);
+        double posactual = motor1.getCurrentPosition();posactual = motor1.getCurrentPosition();//Posición actual del motor
         Serial.print("Posactual:");Serial.println(posactual);
         //Serial.print("Posactual Double:");Serial.println(posactual);
-        //double  posnext;
+        double  posnext;
         delay(2000);
-        myPID.Compute(); //Genera la acción de control
+        myPID.Compute();myPID.Compute(); //Genera la acción de control
+        //motor1.reset();
         delay(2000);
-        Serial.print("Salida:");Serial.println(salida);//Este valor no cambia a pesar de que los valores de posactual y posnext son diferentes
+        Serial.print("Salida:");Serial.println(salida);
         motor1.runSpeed(salida);   
         //salida=0;    
         delay(2000);
-        Serial.print("Diferencia de pos:");Serial.println(abs(posnext-posactual));
+        Serial.print("Diferencia de pos:");Serial.println(abs(posnext-posactual));        
+        i++;
+        Serial.print("i:");Serial.println(i);
       }
-      motor1.runSpeed(salida);   
+         
     }
     if(comando=="2"){
       valor=(angulo.toInt());//decrementamos 10
@@ -88,4 +95,3 @@ void loop(){
 
   delay(10);
 }//End loop
-

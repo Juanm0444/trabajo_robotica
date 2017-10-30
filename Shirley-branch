@@ -7,7 +7,6 @@
 #include <Servo.h>
 
 int valor=0;
-int findecarrera1ult=0,findecarrera2ult=0;
 
 #define kp 0.15
 #define ki 0.0
@@ -35,9 +34,8 @@ void setup(){
   pinMode(8, INPUT);
 
   Serial.begin(9600);
-  attachInterrupt(digitalPinToInterrupt(7), detenermotor(1), CHANGE);
-  attachInterrupt(digitalPinToInterrupt(8), detenermotor(2), CHANGE);
-  resetear();
+  attachInterrupt(digitalPinToInterrupt(7), detenermotor1(), RISING);
+  attachInterrupt(digitalPinToInterrupt(8), detenermotor2(), RISING);
 }
 
 
@@ -98,7 +96,19 @@ void loop(){
       break;
       
     case 4:          //Resetear el robot
-      resetear();
+      motor1.runSpeed(-10);
+      motor2.runSpeed(-10);
+      while(digitalRead(7)==FALSE){};  //espera a que se active el final de carrera
+      motor1.runSpeed(0);
+      motor2.runSpeed(0);
+      motor1.reset();
+      
+      motor1.runSpeed(10);
+      motor2.runSpeed(10);
+      while(digitalRead(8)==FALSE){};  //espera a que se active el final de carrera
+      motor1.runSpeed(0);
+      motor2.runSpeed(0);
+      motor2.reset();
       break;
   }
 
@@ -106,31 +116,14 @@ void loop(){
 }//End loop
 
 
-void detenermotor(int numero){
-    if(numero==1){
-      motor1.runSpeed(0);
-      motor1.reset();
-    }else{
-      motor2.runSpeed(0);
-      motor2.reset();
-    }
+void detenermotor1(){
+  motor1.runSpeed(0);
+  motor1.reset();
 }
 
-void resetear(){
-    motor1.runSpeed(-10);
-    motor2.runSpeed(-10);
-    while(digitalRead(7)==findecarrera1ult){};  //espera a que se active el final de carrera
-    motor1.runSpeed(0);
-    motor2.runSpeed(0);
-    findecarrera1ult = !findecarrera1ult;       //cambia de estado
-    motor1.reset();
-    
-    motor1.runSpeed(10);
-    motor2.runSpeed(10);
-    while(digitalRead(8)==findecarrera2ult){};  //espera a que se active el final de carrera
-    motor1.runSpeed(0);
-    motor2.runSpeed(0);
-    findecarrera2ult = !findecarrera2ult;       //cambia de estado
-    motor2.reset();
+void detenermotor2(){
+  motor2.runSpeed(0);
+  motor2.reset();
 }
+
 

@@ -4,6 +4,7 @@
 #include <Wire.h>
 #include <PinChangeInt.h>
 #include <PID_v1.h>
+#include <Servo.h>
 
 int valor=0;
 
@@ -14,6 +15,7 @@ int valor=0;
 // I2C
 MeEncoderMotor motor1(0x09, SLOT1);   //  Motor at slot1
 MeEncoderMotor motor2(0x09, SLOT2);   //  motor at slot2
+Servo myservo;
 
 double posactual =0, salida=0, posnext =0;
 PID myPID(&posactual, &salida, &posnext, kp, ki, kd, DIRECT);
@@ -27,8 +29,13 @@ void setup(){
   motor2.begin();
   motor1.reset();
   motor2.reset();
+  myservo.attach(9);
+  pinMode(7, INPUT); //Para los fines de carrera
+  pinMode(8, INPUT);
 
   Serial.begin(9600);
+  attachInterrupt(digitalPinToInterrupt(7), detenermotor1(), RISING);
+  attachInterrupt(digitalPinToInterrupt(8), detenermotor2(), RISING);
 }
 
 
@@ -38,8 +45,6 @@ void loop(){
   String comando;
   String angulo;
   int i=0;
-//  posactual=50;
-//  posnext=30;
   Serial.print("Salida1:");Serial.println(salida);
   
   if(Serial.available()){//solo leeremos si hay un byte en el buffer
@@ -49,10 +54,8 @@ void loop(){
     comando  = Serial.readStringUntil('#');
     angulo  = Serial.readStringUntil('#');
 
-
-    if(comando=="1"){
-
-      //myPID.Compute(); //Genera la acción de control
+    switch(comando){
+    case 1:
       posnext=(angulo.toDouble());//Posición a donde se quiere mover el motor enviado por matlab
       Serial.print("Posnext:");Serial.println(posnext);
       
@@ -76,22 +79,51 @@ void loop(){
         i++;
         Serial.print("i:");Serial.println(i);
       }
-         
-    }
-    if(comando=="2"){
+      break;
+      
+    case 2:
       valor=(angulo.toInt());//decrementamos 10
       motor2.moveTo(valor, 200);
       delay(2000);
       
        motor2.moveTo(0, 100);
        delay(2000);
-    }
-    if (comando=="3"){
-      motor1.runSpeed(0);  
-    }
-//    motor1.reset();
-//    motor2.reset();
+       break;
+       
+    case 3:          //Para mover el servo (aquí ángulo es la posición que se quiere bajar en mm).
+      valor = angulo.toInt() * 180.0 / 3.1416 / 32.0;   //El servo puede mover de 0 a 180º
+      myservo.write(valor);
+      break;
+      
+    case 4:          //Resetear el robot
+      motor1.runSpeed(-10);
+      motor2.runSpeed(-10);
+      while(digitalRead(7)==FALSE){};  //espera a que se active el final de carrera
+      motor1.runSpeed(0);
+      motor2.runSpeed(0);
+      motor1.reset();
+      
+      motor1.runSpeed(10);
+      motor2.runSpeed(10);
+      while(digitalRead(8)==FALSE){};  //espera a que se active el final de carrera
+      motor1.runSpeed(0);
+      motor2.runSpeed(0);
+      motor2.reset();
+      break;
   }
 
   delay(10);
 }//End loop
+
+
+void detenermotor1(){
+  motor1.runSpeed(0);
+  motor1.reset();
+}
+
+void detenermotor2(){
+  motor2.runSpeed(0);
+  motor2.reset();
+}
+
+
